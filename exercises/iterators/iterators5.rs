@@ -1,3 +1,16 @@
+// 📖 讲解：iterators5 —— filter/count 统计与嵌套集合的迭代器写法
+// 【题目要求】不用命令式循环，用迭代器重写两个计数函数：count_iterator 统计单个
+//            HashMap 中等于指定 Progress 的条目数；count_collection_iterator 统计
+//            一组 HashMap 中等于指定 Progress 的条目总数。
+// 【考察知识点】`HashMap::values()` 迭代值、`filter` + `count` 组合、切片的
+//            `iter().map(...).sum()` 嵌套组合（外层迭代器对每个内层结果求和）。
+// 【对应教材】Rust Book 第 13 章 13.2-13.4（迭代器适配器：filter/map/count）
+//            https://doc.rust-lang.org/stable/book/ch13-02-iterators.html
+// 【解法思路】count_iterator：`map.values().filter(|&v| *v == value).count()`
+//            （filter 闭包参数是 &&Progress，用 |&v| 解构一层再解引用比较）。
+//            count_collection_iterator：外层 `collection.iter()`，对每个 map 复用
+//            count_iterator 得到各 map 的计数，最后 `sum()` 汇总。
+//
 // iterators5.rs
 //
 // Let's define a simple model to track Rustlings exercise progress. Progress
@@ -10,8 +23,6 @@
 //
 // Execute `rustlings hint iterators5` or use the `hint` watch subcommand for a
 // hint.
-
-// I AM NOT DONE
 
 use std::collections::HashMap;
 
@@ -35,7 +46,7 @@ fn count_for(map: &HashMap<String, Progress>, value: Progress) -> usize {
 fn count_iterator(map: &HashMap<String, Progress>, value: Progress) -> usize {
     // map is a hashmap with String keys and Progress values.
     // map = { "variables1": Complete, "from_str": None, ... }
-    todo!();
+    map.values().filter(|&v| *v == value).count() // 💡 遍历值 -> 过滤等于 value 的 -> 计数；|&v| 解掉一层引用再解引用比较
 }
 
 fn count_collection_for(collection: &[HashMap<String, Progress>], value: Progress) -> usize {
@@ -54,7 +65,10 @@ fn count_collection_iterator(collection: &[HashMap<String, Progress>], value: Pr
     // collection is a slice of hashmaps.
     // collection = [{ "variables1": Complete, "from_str": None, ... },
     //     { "variables2": Complete, ... }, ... ]
-    todo!();
+    collection
+        .iter()
+        .map(|map| count_iterator(map, value)) // 💡 对每个 HashMap 算出匹配计数
+        .sum() // 💡 把各 map 的计数求和
 }
 
 #[cfg(test)]

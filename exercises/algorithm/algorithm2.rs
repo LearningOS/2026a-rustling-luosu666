@@ -1,8 +1,20 @@
+// 📖 讲解：algorithm2 - doubly linked list reverse（双链表反转）
+// 【题目要求】在不借助额外链表的前提下，原地反转一个用裸指针 NonNull 实现的双向链表。
+// 【考察知识点】链表三指针迭代反转（prev/cur/next）；NonNull 裸指针的 unsafe 操作；
+//             反转后头尾指针（start/end）也要交换。
+// 【对应教材】数据结构与算法——链表章节（经典 reverse 算法）。
+// 【解法思路】经典三指针法：从旧头开始逐个节点把 next 反指向 prev，同时把 prev 反指向（原来的 next），
+//             直到走完。循环结束后 prev 恰好停在旧尾（新头）。
+//             最后 start/end 互换：新头 = 旧尾 = prev，新尾 = 旧头。
+//             时间 O(n)，空间 O(1)。
+//             易错点：1) 循环里必须先保存 current 的 next 再改写，否则断链后无法继续；
+//                    2) node.prev 应指向"反转前的下一个节点"（即更新后的 current）；
+//                    3) 别忘了交换 self.start 和 self.end，否则 get(0) 从旧头开始遍历会得到空结果。
+
 /*
 	double linked list reverse
 	This problem requires you to reverse a doubly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -73,7 +85,25 @@ impl<T> LinkedList<T> {
         }
     }
 	pub fn reverse(&mut self){
-		// TODO
+		// 三指针迭代反转：prev 记录已反转部分的头，current 是当前待处理节点
+		let mut current = self.start;
+		let mut prev: Option<NonNull<Node<T>>> = None;
+		while let Some(cur) = current {
+			unsafe {
+				// 💡 1. 先保存下一个节点（改 next 指针之前必须保存，否则断链）
+				current = (*cur.as_ptr()).next;
+				// 💡 2. 把 next 反过来指向前一个节点
+				(*cur.as_ptr()).next = prev;
+				// 💡 3. prev 反过来指向"原来的下一个节点"（此时 current 已更新为它）
+				(*cur.as_ptr()).prev = current;
+			}
+			// 💡 4. 当前节点处理完毕，成为已反转部分的新头
+			prev = Some(cur);
+		}
+		// 💡 5. 循环结束后 prev 停在旧尾（新头）；旧头变成新尾，交换 start/end
+		let old_start = self.start;
+		self.start = prev;
+		self.end = old_start;
 	}
 }
 

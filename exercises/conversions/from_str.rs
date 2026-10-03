@@ -1,3 +1,15 @@
+// 📖 讲解：from_str
+// 【题目要求】为 Person 实现 FromStr：解析 "名字,年龄" 字符串，非法时返回具体错误枚举而非默认值。
+//             空串→Empty；逗号分出的字段数不是 2→BadLen；名字为空→NoName；年龄解析失败→ParseInt(包装 ParseIntError)。
+// 【考察知识点】FromStr trait 与 `str::parse`；自定义错误枚举；错误分支的精确对应。
+// 【对应教材】std::str::FromStr 文档（https://doc.rust-lang.org/std/str/trait.FromStr.html）。
+// 【解法思路】依次判断：1) s.is_empty() → Empty；
+//             2) split(',') 逐段取出，第二段不存在 → BadLen（缺年龄）；
+//             3) 第三段存在 → BadLen（"John,32," / "John,32,man" 逗号过多，这是最容易漏掉的分支！）；
+//             4) 名字为空 → NoName（注意 "," 和 ",one" 测试要求 NoName 优先于年龄解析错误）；
+//             5) 年龄 parse::<usize>() 失败 → ParseInt(e)；
+//             否则返回 Ok(Person)。
+
 // from_str.rs
 //
 // This is similar to from_into.rs, but this time we'll implement `FromStr` and
@@ -31,8 +43,6 @@ enum ParsePersonError {
     ParseInt(ParseIntError),
 }
 
-// I AM NOT DONE
-
 // Steps:
 // 1. If the length of the provided string is 0, an error should be returned
 // 2. Split the given string on the commas present in it
@@ -52,6 +62,34 @@ enum ParsePersonError {
 impl FromStr for Person {
     type Err = ParsePersonError;
     fn from_str(s: &str) -> Result<Person, Self::Err> {
+        // 💡 1. 空串 → Empty
+        if s.is_empty() {
+            return Err(ParsePersonError::Empty);
+        }
+
+        // 💡 2. 惰性切分，逐段取出检查
+        let mut split = s.split(',');
+        let name = split.next().unwrap(); // 💡 split 至少产出一段，空串情形已在上面排除
+        let age = match split.next() {
+            Some(age) => age,                        // 💡 有第二段才能当年龄用
+            None => return Err(ParsePersonError::BadLen), // 💡 缺第二段（如 "John"）→ BadLen
+        };
+        // 💡 3. 必须恰好两段：第三段存在（如 "John,32," / "John,32,man"）→ BadLen（易漏分支！）
+        if split.next().is_some() {
+            return Err(ParsePersonError::BadLen);
+        }
+        // 💡 4. 名字为空（如 ",1"、","）→ NoName（测试要求 NoName 分支能匹配 "," 与 ",one"）
+        if name.is_empty() {
+            return Err(ParsePersonError::NoName);
+        }
+        // 💡 5. 解析年龄，失败时把 ParseIntError 包装成 ParseInt 变体
+        match age.parse::<usize>() {
+            Ok(age) => Ok(Person {
+                name: name.to_string(),
+                age,
+            }),
+            Err(e) => Err(ParsePersonError::ParseInt(e)),
+        }
     }
 }
 

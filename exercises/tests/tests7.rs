@@ -1,3 +1,15 @@
+// 📖 讲解：tests7 —— 用 build.rs 设置环境变量
+// 【题目要求】本文件不允许修改！解法在同目录的 `build.rs` 中：通过
+//            `cargo:rustc-env=TEST_FOO=<当前时间戳>` 设置环境变量，使下面的测试
+//            读到的 TEST_FOO 落在 [当前时间, 当前时间+10) 秒范围内。
+// 【考察知识点】Cargo 构建脚本 build.rs、`cargo:` 指令中的 `rustc-env=VAR=VALUE`
+//            （cargo 会把它提供给编译期 env! 宏，也会注入 cargo 所执行测试进程的
+//            运行时环境）。
+// 【对应教材】Cargo Book 构建脚本章节
+//            https://doc.rust-lang.org/cargo/reference/build-scripts.html
+// 【解法思路】在 build.rs 里取当前 Unix 时间戳，`println!("cargo:rustc-env=TEST_FOO={}", timestamp)`，
+//            cargo 编译/运行测试时 TEST_FOO 即为该时间戳，测试断言通过。
+//
 // tests7.rs
 //
 // When building packages, some dependencies can neither be imported in
@@ -34,8 +46,6 @@
 // Execute `rustlings hint tests7` or use the `hint` watch subcommand for a
 // hint.
 
-// I AM NOT DONE
-
 fn main() {}
 
 #[cfg(test)]
@@ -48,7 +58,7 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        let s = std::env::var("TEST_FOO").unwrap();
+        let s = std::env::var("TEST_FOO").unwrap(); // 💡 此变量由 build.rs 里的 cargo:rustc-env=TEST_FOO=<时间戳> 提供
         let e: u64 = s.parse().unwrap();
         assert!(timestamp >= e && timestamp < e + 10);
     }

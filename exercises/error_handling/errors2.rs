@@ -1,3 +1,9 @@
+// 📖 讲解：errors2
+// 【题目要求】total_cost 接收用户输入的字符串并 parse 成数字。当 parse 失败时要把 ParseIntError 立即作为错误返回，而不是继续运算。
+// 【考察知识点】? 运算符的错误传播（最简写法），或手动 match Result；parse::<i32>() 的 turbofish 写法。
+// 【对应教材】Rust Book 第 9 章（§9.2 ? 运算符传播错误）
+// 【解法思路】parse 返回 Result<i32, ParseIntError>，直接在表达式末尾加 ?：成功时得到 i32 继续计算，失败时函数提前返回 Err。这比手写 match 短得多。
+
 // errors2.rs
 //
 // Say we're writing a game where you can buy items with tokens. All items cost
@@ -19,14 +25,12 @@
 // Execute `rustlings hint errors2` or use the `hint` watch subcommand for a
 // hint.
 
-// I AM NOT DONE
-
 use std::num::ParseIntError;
 
 pub fn total_cost(item_quantity: &str) -> Result<i32, ParseIntError> {
     let processing_fee = 1;
     let cost_per_item = 5;
-    let qty = item_quantity.parse::<i32>();
+    let qty = item_quantity.parse::<i32>()?; // 💡 加一个 ? ：出错时立即把 ParseIntError 返回给调用者，成功时 qty 就是 i32
 
     Ok(qty * cost_per_item + processing_fee)
 }

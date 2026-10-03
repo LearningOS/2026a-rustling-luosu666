@@ -1,8 +1,22 @@
+// 📖 讲解：algorithm10 - graph（无向图的邻接表与加边）
+// 【题目要求】补全 add_node（把节点加入 HashMap 邻接表，已存在返回 false）与
+//             add_edge（无向边：两端点各自记录对方及权重），通过 edges() 的六条有向边断言。
+// 【考察知识点】HashMap 邻接表表示无向加权图；trait 默认方法与具体实现的关系；
+//             contains/get_mut/insert 的使用；无向边要"双向"记录。
+// 【对应教材】数据结构与算法——图的存储（邻接表）章节。
+// 【解法思路】add_node：contains 已存在 → false；否则插入 (node.to_string(), Vec::new()) → true。
+//             add_edge：先 add_node 保证两个端点都出现在表里（哪怕无边也要有邻接向量），
+//             再分别往 from 和 to 的邻接向量里 push (对方, 权重)——无向图必须存两份。
+//             trait 的默认 add_edge 与 UndirectedGraph 的覆盖实现写法一致（都要实现）。
+//             时间复杂度：add_node 平均 O(1)，add_edge 平均 O(1)。
+//             易错点：1) 无向边忘记双向 push 会导致 edges() 缺一半；
+//                    2) add_node 已存在时不能清空原有的邻接表（否则会覆盖已有边）；
+//                    3) add_edge 必须先保证节点存在，再 get_mut(...).unwrap() 才安全。
+
 /*
 	graph
 	This problem requires you to implement a basic graph functio
 */
-// I AM NOT DONE
 
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -29,7 +43,20 @@ impl Graph for UndirectedGraph {
         &self.adjacency_table
     }
     fn add_edge(&mut self, edge: (&str, &str, i32)) {
-        //TODO
+        // 💡 无向边：先确保两个端点都在表中（不存在则创建空邻接表）
+        let (from, to, weight) = edge;
+        self.add_node(from);
+        self.add_node(to);
+        // 💡 from 的邻接表里记录 (to, weight)
+        self.adjacency_table_mutable()
+            .get_mut(from)
+            .unwrap()
+            .push((to.to_string(), weight));
+        // 💡 无向图必须双向记录：to 的邻接表里也记录 (from, weight)
+        self.adjacency_table_mutable()
+            .get_mut(to)
+            .unwrap()
+            .push((from.to_string(), weight));
     }
 }
 pub trait Graph {
@@ -37,11 +64,28 @@ pub trait Graph {
     fn adjacency_table_mutable(&mut self) -> &mut HashMap<String, Vec<(String, i32)>>;
     fn adjacency_table(&self) -> &HashMap<String, Vec<(String, i32)>>;
     fn add_node(&mut self, node: &str) -> bool {
-        //TODO
-		true
+        // 💡 已存在：返回 false，且绝不能覆盖原有邻接表（否则丢失已有边）
+        if self.contains(node) {
+            return false;
+        }
+        // 💡 不存在：插入空邻接向量并返回 true
+        self.adjacency_table_mutable()
+            .insert(node.to_string(), Vec::new());
+        true
     }
     fn add_edge(&mut self, edge: (&str, &str, i32)) {
-        //TODO
+        // 💡 默认实现与 UndirectedGraph 的实现一致：先建节点，再双向记录边
+        let (from, to, weight) = edge;
+        self.add_node(from);
+        self.add_node(to);
+        self.adjacency_table_mutable()
+            .get_mut(from)
+            .unwrap()
+            .push((to.to_string(), weight));
+        self.adjacency_table_mutable()
+            .get_mut(to)
+            .unwrap()
+            .push((from.to_string(), weight));
     }
     fn contains(&self, node: &str) -> bool {
         self.adjacency_table().get(node).is_some()

@@ -1,3 +1,15 @@
+// 📖 讲解：hashmaps3
+// 【题目要求】解析比赛结果文本（"队A,队B,A进球,B进球"），建立每个队的进球/失球统计表，
+//             使所有测试通过。
+// 【考察知识点】entry().or_insert(..) 累计统计模式：队伍第一次出现时插入零值 Team，
+//             之后通过 or_insert 返回的 &mut Team 累加；
+//             注意一个队的“进球”是对手的“失球”，两条 entry 调用分别更新两个队。
+// 【对应教材】Rust Book §8.3（Hash Map：基于旧值更新——书中的单词计数示例就是同一模式）
+// 【解法思路】对每一行：team_1 进 team_1_score 球、失 team_2_score 球；team_2 正好相反。
+//             scores.entry(name).or_insert(Team { goals_scored: 0, goals_conceded: 0 })
+//             返回 &mut Team，直接对字段 += 即可。
+//             验证 England：对 France 进 4 失 2，对 Germany 进 1 失 2 → 进 5 失 4 ✓。
+
 // hashmaps3.rs
 //
 // A list of scores (one per line) of a soccer match is given. Each line is of
@@ -13,8 +25,6 @@
 //
 // Execute `rustlings hint hashmaps3` or use the `hint` watch subcommand for a
 // hint.
-
-// I AM NOT DONE
 
 use std::collections::HashMap;
 
@@ -39,6 +49,20 @@ fn build_scores_table(results: String) -> HashMap<String, Team> {
         // will be the number of goals conceded from team_2, and similarly
         // goals scored by team_2 will be the number of goals conceded by
         // team_1.
+
+        // 💡 team_1：第一次出现则先插入全零 Team；or_insert 返回 &mut Team，可直接累加字段
+        let team_1 = scores
+            .entry(team_1_name)
+            .or_insert(Team { goals_scored: 0, goals_conceded: 0 });
+        team_1.goals_scored += team_1_score;   // 💡 team_1 的进球
+        team_1.goals_conceded += team_2_score; // 💡 team_1 的失球 = team_2 的进球
+
+        // 💡 team_2：同样的模式，进球/失球正好与 team_1 相反
+        let team_2 = scores
+            .entry(team_2_name)
+            .or_insert(Team { goals_scored: 0, goals_conceded: 0 });
+        team_2.goals_scored += team_2_score;
+        team_2.goals_conceded += team_1_score;
     }
     scores
 }

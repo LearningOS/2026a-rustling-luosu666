@@ -1,3 +1,9 @@
+// 📖 讲解：errors5
+// 【题目要求】main 里同时用 ? 传播两种不同类型的错误：parse 的 ParseIntError 和 PositiveNonzeroInteger::new 的 CreationError。需要找一个公共的"错误 trait"作为统一的错误类型。
+// 【考察知识点】Box<dyn Error> 这一"任何实现了 Error 的类型"的包装类型；trait 对象 dyn Trait；? 会自动用 From 把具体错误装箱。
+// 【对应教材】Rust Book 第 9 章（§9.2 从 boxed trait 对象的错误中使用 ?）
+// 【解法思路】把 ??? 换成 error::Error（文件已 use std::error）。这样 ParseIntError 和实现了 error::Error 的 CreationError 都能被 ? 自动 Box 起来放进同一个 Result。
+
 // errors5.rs
 //
 // This program uses an altered version of the code from errors4.
@@ -22,17 +28,15 @@
 // Execute `rustlings hint errors5` or use the `hint` watch subcommand for a
 // hint.
 
-// I AM NOT DONE
-
 use std::error;
 use std::fmt;
 use std::num::ParseIntError;
 
 // TODO: update the return type of `main()` to make this compile.
-fn main() -> Result<(), Box<dyn ???>> {
+fn main() -> Result<(), Box<dyn error::Error>> { // 💡 用 trait 对象 dyn error::Error 统一两种错误；? 会自动 Box 并转换
     let pretend_user_input = "42";
-    let x: i64 = pretend_user_input.parse()?;
-    println!("output={:?}", PositiveNonzeroInteger::new(x)?);
+    let x: i64 = pretend_user_input.parse()?; // 💡 ParseIntError 实现了 Error，可被 ? 装进 Box<dyn Error>
+    println!("output={:?}", PositiveNonzeroInteger::new(x)?); // 💡 CreationError 同样实现了 Error（见文件底部）
     Ok(())
 }
 

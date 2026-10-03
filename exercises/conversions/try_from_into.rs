@@ -1,3 +1,13 @@
+// 📖 讲解：try_from_into
+// 【题目要求】为 Color 实现 TryFrom：<i16,i16,i16> 元组、[i16;3] 数组、&[i16] 切片三种来源。
+//             值必须在 0..=255（能安全转成 u8），越界返回 IntConversion；切片长度不是 3 返回 BadLen。
+// 【考察知识点】TryFrom/TryInto 可失败转换；u8::try_from 处理越界；map_err 把底层错误映射为自定义错误；
+//             数组长度编译期固定而切片长度运行期才知道（所以只有切片实现需要检查长度）。
+// 【对应教材】std::convert::TryFrom 文档（https://doc.rust-lang.org/std/convert/trait.TryFrom.html）。
+// 【解法思路】核心只写一份：tuple 实现里用 u8::try_from 逐个转换 i16→u8，失败用 map_err(|_| IntConversion) + `?` 提前返回；
+//             数组实现直接委托 tuple 版本（长度编译期已保证为 3）；
+//             切片实现先检查 slice.len() == 3（BadLen），再委托 tuple 版本（IntConversion）。
+
 // try_from_into.rs
 //
 // TryFrom is a simple and safe type conversion that may fail in a controlled
@@ -27,8 +37,6 @@ enum IntoColorError {
     IntConversion,
 }
 
-// I AM NOT DONE
-
 // Your task is to complete this implementation and return an Ok result of inner
 // type Color. You need to create an implementation for a tuple of three
 // integers, an array of three integers, and a slice of integers.
@@ -41,6 +49,12 @@ enum IntoColorError {
 impl TryFrom<(i16, i16, i16)> for Color {
     type Error = IntoColorError;
     fn try_from(tuple: (i16, i16, i16)) -> Result<Self, Self::Error> {
+        // 💡 核心实现：u8::try_from 越界/为负时返回 Err，用 map_err 统一映射成 IntConversion
+        Ok(Color {
+            red: u8::try_from(tuple.0).map_err(|_| IntoColorError::IntConversion)?,
+            green: u8::try_from(tuple.1).map_err(|_| IntoColorError::IntConversion)?,
+            blue: u8::try_from(tuple.2).map_err(|_| IntoColorError::IntConversion)?,
+        })
     }
 }
 
@@ -48,6 +62,8 @@ impl TryFrom<(i16, i16, i16)> for Color {
 impl TryFrom<[i16; 3]> for Color {
     type Error = IntoColorError;
     fn try_from(arr: [i16; 3]) -> Result<Self, Self::Error> {
+        // 💡 数组长度为 3 是编译期保证的，直接复用 tuple 的实现即可
+        Color::try_from((arr[0], arr[1], arr[2]))
     }
 }
 
@@ -55,6 +71,12 @@ impl TryFrom<[i16; 3]> for Color {
 impl TryFrom<&[i16]> for Color {
     type Error = IntoColorError;
     fn try_from(slice: &[i16]) -> Result<Self, Self::Error> {
+        // 💡 切片长度运行期才知道，必须先检查长度（过长/过短都是 BadLen）
+        if slice.len() != 3 {
+            return Err(IntoColorError::BadLen);
+        }
+        // 💡 长度合法后复用 tuple 实现，数值越界自然得到 IntConversion
+        Color::try_from((slice[0], slice[1], slice[2]))
     }
 }
 

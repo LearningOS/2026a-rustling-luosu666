@@ -1,3 +1,19 @@
+// 📖 讲解：tests9 —— extern 块、#[no_mangle] 与 #[link_name] 链接别名
+// 【题目要求】只允许添加两行属性：让 extern 块声明的 `my_demo_function` 和
+//            `my_demo_function_alias` 都能链接到 mod Foo 里的同名 Rust 函数。
+// 【考察知识点】`extern "Rust"` 块声明外部函数、符号默认会被 name-mangling（混淆）、
+//            `#[no_mangle]` 以原名导出符号、`#[link_name = "..."]` 为声明指定实际
+//            链接的符号名（做别名）。
+// 【对应教材】Rust Book 第 19 章高级特性（调用 Rust 或 C 编写的外部代码）/ Rust
+//            Reference 的 ABI 与 Linkage 章节
+//            https://doc.rust-lang.org/stable/book/ch19-01-unsafe-rust.html#using-extern-functions-to-call-external-code
+// 【解法思路】两行属性缺一不可：
+//            1) 在 mod Foo 的函数定义上加 `#[no_mangle]`，关闭符号混淆，把函数以
+//               符号名 `my_demo_function` 导出到链接环境；
+//            2) 在 extern 块的 `my_demo_function_alias` 声明上加
+//               `#[link_name = "my_demo_function"]`，说明这个声明实际链接到上面的符号。
+//            这样两个声明解析到同一个函数，测试即可通过。
+//
 // tests9.rs
 //
 // Rust is highly capable of sharing FFI interfaces with C/C++ and other statically compiled
@@ -27,15 +43,15 @@
 //
 // You should NOT modify any existing code except for adding two lines of attributes.
 
-// I AM NOT DONE
-
 extern "Rust" {
     fn my_demo_function(a: u32) -> u32;
+    #[link_name = "my_demo_function"] // 💡 属性 2：别名声明实际链接到符号 my_demo_function
     fn my_demo_function_alias(a: u32) -> u32;
 }
 
 mod Foo {
     // No `extern` equals `extern "Rust"`.
+    #[no_mangle] // 💡 属性 1：不混淆符号名，将函数以原名 my_demo_function 导出供 extern 块链接
     fn my_demo_function(a: u32) -> u32 {
         a
     }

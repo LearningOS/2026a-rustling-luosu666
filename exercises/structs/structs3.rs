@@ -1,3 +1,12 @@
+// 📖 讲解：structs3
+// 【题目要求】为 Package 实现两个方法：is_international 判断是否国际件，get_fees 按单价计算运费，
+//             补全返回类型和方法体，使测试通过。
+// 【考察知识点】impl 块与关联函数/方法：`&self` 只读借用读取字段；方法返回类型的推导；
+//             字段语法糖（字段名与局部变量同名时可简写，见 new 中的写法）。
+// 【对应教材】Rust Book 第 5 章（§5.3 方法语法）
+// 【解法思路】is_international -> bool：寄件国 != 收件国（String 可直接用 != 比较内容）。
+//             get_fees -> i32：直接返回 weight_in_grams * cents_per_gram（测试用例 1500×3=4500、1500×6=9000）。
+
 // structs3.rs
 //
 // Structs contain data, but can also have logic. In this exercise we have
@@ -6,8 +15,6 @@
 //
 // Execute `rustlings hint structs3` or use the `hint` watch subcommand for a
 // hint.
-
-// I AM NOT DONE
 
 #[derive(Debug)]
 struct Package {
@@ -29,12 +36,14 @@ impl Package {
         }
     }
 
-    fn is_international(&self) -> ??? {
+    fn is_international(&self) -> bool { // 💡 返回 bool；&self 只读借用，不消耗 Package
         // Something goes here...
+        self.sender_country != self.recipient_country // 💡 寄件国与收件国不同即国际件（String 支持 ==/!= 直接比较内容）
     }
 
-    fn get_fees(&self, cents_per_gram: i32) -> ??? {
+    fn get_fees(&self, cents_per_gram: i32) -> i32 { // 💡 返回 i32，与 weight_in_grams 的类型一致
         // Something goes here...
+        self.weight_in_grams * cents_per_gram // 💡 运费 = 重量 × 每克单价
     }
 }
 

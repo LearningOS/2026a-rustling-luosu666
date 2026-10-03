@@ -1,3 +1,13 @@
+// 📖 讲解：hashmaps2
+// 【题目要求】篮子里已有 Apple(4)、Mango(2)、Lychee(5) 共 11 个；不许改动已有水果的数量，
+//             只能给“目前不存在”的水果补货，使总种类 >=5、总数 >11。
+// 【考察知识点】entry() API：entry(key) 返回 Entry 枚举，or_insert(v) 只在键不存在时才插入，
+//             天然满足“已存在则不动、不存在才补”的需求——这是 HashMap 最重要的惯用法之一。
+// 【对应教材】Rust Book §8.3（基于现有值更新 / entry API“only_inserting a value if the key has no value”）
+// 【解法思路】循环遍历 5 种水果，逐个 basket.entry(fruit).or_insert(1)：
+//             Apple/Mango/Lychee 已存在→跳过（数量不变，测试1通过）；
+//             Banana/Pineapple 不存在→插入 1（种类变 5，总数 11+2=13 > 11，测试2、3、4通过）。
+
 // hashmaps2.rs
 //
 // We're collecting different fruits to bake a delicious fruit cake. For this,
@@ -13,8 +23,6 @@
 //
 // Execute `rustlings hint hashmaps2` or use the `hint` watch subcommand for a
 // hint.
-
-// I AM NOT DONE
 
 use std::collections::HashMap;
 
@@ -40,6 +48,7 @@ fn fruit_basket(basket: &mut HashMap<Fruit, u32>) {
         // TODO: Insert new fruits if they are not already present in the
         // basket. Note that you are not allowed to put any type of fruit that's
         // already present!
+        basket.entry(fruit).or_insert(1); // 💡 entry 拿到该键的“入口”，or_insert(1) 只在键不存在时插入 1；已存在的 Apple/Mango/Lychee 数量保持不变
     }
 }
 
@@ -81,7 +90,7 @@ mod tests {
         let count = basket.values().sum::<u32>();
         assert!(count > 11);
     }
-    
+
     #[test]
     fn all_fruit_types_in_basket() {
         let mut basket = get_fruit_basket();
